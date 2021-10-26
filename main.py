@@ -2,7 +2,7 @@ from hw import * # getting all the things from the hardware module so we can acc
 import random
 import network
 
-import binascii, hashlib # for SSID and password generation
+import json, binascii, hashlib # for SSID and password generation
 
 # showing the "cutie" image on startup
 show_compressed(cutie_c)
@@ -16,16 +16,43 @@ show_compressed(cutie_c)
 
 getrandomhex = lambda: binascii.hexlify(hashlib.sha1(str(random.getrandbits(10))).digest())
 
-ssid = "WiFiNugget-"+getrandomhex()[:6].decode("ascii")
-psk = getrandomhex()[:12]
+# if psk file exists, loading it, otherwise generating a new psk
+try:
+    with open("wifi.json", "r") as f:
+        j = json.load(f)
+    psk = j["psk"]
+    print("psk loaded", psk)
+except Exception as e:
+    # psk loading failed for some reason - either nonexistent file or some weirdness
+    print(e)
+    psk = getrandomhex()[:12]
+    with open("wifi.json", "w") as f:
+        j = {"psk":psk}
+        json.dump(j, f)
+    print("psk generated and saved", psk)
 
 # AP setup
 ap = network.WLAN(network.AP_IF)
+
+# static SSID that depends on the MAC address
+ssid = "Nugget-"+binascii.hexlify(ap.config('mac')[2:]).decode("ascii").upper()
+
 ap.active(True) # needed to set AP parameters
 sleep(0.5) # sometimes needed so that AP config doesn't fail immediately
-ap.config(essid=ssid, password=psk) # sets new SSID and password that are randomized, comment this out to disable randomization
-ap.active(False) # remove this line to enable AP mode
+ap.config(essid=ssid, password=psk)
+# check if right button is pressed
+buttons.update()
+if buttons.right:
+    # Keeping AP active and showing SSID&PSK on the screen
+    lcd.text(ssid, 3, 3)
+    lcd.text(psk, 3, 64-(1+8))
+    lcd.show()
+    sleep(2)
+else:
+    # right button not pressed, disabling the AP
+    ap.active(False)
 print("SSID:", ssid, "PSK:", psk, "active:", ap.active())
+
 
 # STA setup
 sta = network.WLAN(network.STA_IF)
@@ -66,6 +93,7 @@ np = get_neopixels(1) # only one Neopixel connected - increase the number if you
 # waiting for "up" button
 np[0] = (127, 0, 0)
 np.write()
+lcd.fill_rect(3, 3, 3+8*21, 3+8, 0)
 lcd.text("press up", 3, 3)
 lcd.show()
 while not buttons.up:
