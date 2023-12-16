@@ -42,3 +42,7 @@ Quickstart Setup: https://youtu.be/WAG7yCbEFtw
 
 * `sh1106.py` - [robert-hh's SH1106 library](https://github.com/robert-hh/SH1106/)
 
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/RakhithJK/WiFiNugget.svg)](https://starchart.cc/RakhithJK/WiFiNugget)
